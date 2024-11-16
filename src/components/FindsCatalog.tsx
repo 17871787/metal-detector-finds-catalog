@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { MapPin, Copy, Check, Plus, Loader } from 'lucide-react';
+import Image from 'next/image';
 
 interface Find {
   id: number;
@@ -53,8 +54,8 @@ const loadFinds = (): Find[] | null => {
         }
       ];
     }
-  } catch (error) {
-    console.error('Error loading finds:', error);
+  } catch (err) {
+    console.error('Error loading finds:', err);
     return null;
   }
   return [];
@@ -64,8 +65,8 @@ const saveFinds = (finds: Find[]): boolean => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(finds));
     return true;
-  } catch (error) {
-    console.error('Error saving finds:', error);
+  } catch (err) {
+    console.error('Error saving finds:', err);
     return false;
   }
 };
@@ -90,8 +91,9 @@ const FindsCatalog: React.FC = () => {
         } else {
           setFinds(loadedFinds);
         }
-      } catch (error) {
+      } catch (err) {
         setStorageError("Error loading saved finds.");
+        console.error('Error in loadInitialData:', err);
       } finally {
         setIsLoading(false);
       }
@@ -157,8 +159,9 @@ const FindsCatalog: React.FC = () => {
       setNewFind(initialFind);
       setImagePreview("");
       setStorageError("");
-    } catch (error) {
+    } catch (err) {
       setStorageError("Failed to save find. Storage might be full or disabled.");
+      console.error('Error in handleSubmit:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -303,10 +306,12 @@ const FindsCatalog: React.FC = () => {
                 />
                 {imagePreview && (
                   <div className="w-32 h-32 relative">
-                    <img
+                    <Image
                       src={imagePreview}
                       alt="Preview"
-                      className="w-full h-full object-cover rounded"
+                      width={128}
+                      height={128}
+                      className="object-cover rounded"
                     />
                   </div>
                 )}
@@ -339,11 +344,14 @@ const FindsCatalog: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {finds.map((find) => (
           <div key={find.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-            <img
-              src={find.imageUrl}
-              alt={find.name}
-              className="w-full h-48 object-cover"
-            />
+            <div className="relative w-full h-48">
+              <Image
+                src={find.imageUrl}
+                alt={find.name}
+                fill
+                className="object-cover"
+              />
+            </div>
             <div className="p-4">
               <h3 className="text-xl font-semibold mb-2">{find.name}</h3>
               <div className="space-y-2">
