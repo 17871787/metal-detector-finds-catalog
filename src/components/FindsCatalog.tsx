@@ -3,9 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Copy, Check, Plus, Loader, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-// src/components/FindsCatalog.tsx
+import { Find, NewFind } from '@/types/finds';
 import { findService } from '../services/findservice';
-import { Find, NewFind } from '../types/finds';
 
 const initialFind: NewFind = {
   name: "",
@@ -50,19 +49,19 @@ const FindsCatalog: React.FC = () => {
 
   const handleDelete = async (find: Find) => {
     if (!window.confirm('Are you sure you want to delete this find?')) return;
+    setIsLoading(true);
     
     try {
       await findService.deleteFind(find.id, find.imageUrl);
       setFinds(prevFinds => prevFinds.filter(f => f.id !== find.id));
+    setIsLoading(false);
     } catch (err) {
       setError("Failed to delete find. Please try again.");
       console.error('Error deleting find:', err);
     }
   };
 
-  const handleShowForm = () => {
-    setShowForm(!showForm);
-  };
+  const handleShowForm = () => { setShowForm(!showForm); };
 
   const handleCopyW3W = (words: string): void => {
     navigator.clipboard.writeText(words);
@@ -136,9 +135,14 @@ const FindsCatalog: React.FC = () => {
         <h1 className="text-3xl font-bold">Metal Detecting Finds Catalog</h1>
         <button
           onClick={handleShowForm}
-          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+          disabled={isLoading}
         >
-          <Plus size={20} />
+          {isLoading ? (
+            <Loader className="w-4 h-4 animate-spin" />
+          ) : (
+            <Plus size={20} />
+          )}
           Add New Find
         </button>
       </div>
@@ -283,10 +287,15 @@ const FindsCatalog: React.FC = () => {
           <div key={find.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow relative">
             <button
               onClick={() => handleDelete(find)}
-              className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-red-50 z-10"
+              className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-red-50 z-10 disabled:opacity-50"
+              disabled={isLoading}
               title="Delete find"
             >
-              <Trash2 className="text-red-500" size={20} />
+              {isLoading ? (
+                <Loader className="w-5 h-5 animate-spin text-red-500" />
+              ) : (
+                <Trash2 className="text-red-500" size={20} />
+              )}
             </button>
             <div className="relative w-full h-48">
               <Image
@@ -314,7 +323,7 @@ const FindsCatalog: React.FC = () => {
                       {find.what3words}
                     </a>
                     <button
-                      onClick={() => handleCopyW3W(find.what3words)}
+                      onClick={() => { handleCopyW3W(find.what3words); }}
                       className="p-1 hover:bg-gray-100 rounded"
                     >
                       {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
