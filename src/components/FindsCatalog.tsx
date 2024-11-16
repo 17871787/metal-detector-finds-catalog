@@ -337,4 +337,4 @@ const FindsCatalog: React.FC = () => {
   );
 };
 
-export default FindsCatalog;0*6
+export default FindsCatalog;
