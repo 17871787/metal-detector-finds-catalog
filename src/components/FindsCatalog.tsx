@@ -3,22 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Copy, Check, Plus, Loader, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-
-interface Find {
-  id: number;
-  name: string;
-  date: string;
-  location: string;
-  coordinates: string;
-  what3words: string;
-  depth: string;
-  metalType: string;
-  condition: string;
-  notes: string;
-  imageUrl: string;
-}
-
-type NewFind = Omit<Find, 'id' | 'imageUrl'>;
+// src/components/FindsCatalog.tsx
+import { findService } from '../services/findservice';
+import { Find, NewFind } from '../types/finds';
 
 const initialFind: NewFind = {
   name: "",
@@ -32,89 +19,48 @@ const initialFind: NewFind = {
   notes: ""
 };
 
-const STORAGE_KEY = 'metal-detector-finds';
-
-const loadFinds = (): Find[] | null => {
-  try {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [
-        {
-          id: 1,
-          name: "1942 Silver Quarter",
-          date: "2024-03-15",
-          location: "Thompson Park",
-          coordinates: "40.7128° N, 74.0060° W",
-          what3words: "filled.count.soap",
-          depth: "6 inches",
-          metalType: "Silver",
-          condition: "Good",
-          notes: "Found near old playground area",
-          imageUrl: "/api/placeholder/300/200"
-        }
-      ];
-    }
-  } catch (err) {
-    console.error('Error loading finds:', err);
-    return null;
-  }
-  return [];
-};
-
-const saveFinds = (finds: Find[]): boolean => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(finds));
-    return true;
-  } catch (err) {
-    console.error('Error saving finds:', err);
-    return false;
-  }
-};
-
 const FindsCatalog: React.FC = () => {
   const [finds, setFinds] = useState<Find[]>([]);
   const [showForm, setShowForm] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
   const [newFind, setNewFind] = useState<NewFind>(initialFind);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [storageError, setStorageError] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const loadedFinds = loadFinds();
-        if (loadedFinds === null) {
-          setStorageError("Unable to load saved finds. Storage might be disabled.");
-        } else {
-          setFinds(loadedFinds);
-        }
-      } catch (err) {
-        setStorageError("Error loading saved finds.");
-        console.error('Error in loadInitialData:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadInitialData();
+    loadFinds();
   }, []);
 
-  const handleDelete = (findId: number) => {
-    if (window.confirm('Are you sure you want to delete this find?')) {
-      const updatedFinds = finds.filter(find => find.id !== findId);
-      if (saveFinds(updatedFinds)) {
-        setFinds(updatedFinds);
-      } else {
-        setStorageError("Failed to save after deletion. Please try again.");
-      }
+  const loadFinds = async () => {
+    try {
+      setIsLoading(true);
+      const loadedFinds = await findService.getFinds();
+      setFinds(loadedFinds);
+      setError("");
+    } catch (err) {
+      setError("Failed to load finds. Please try again later.");
+      console.error('Error loading finds:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleShowForm = async () => {
-    await new Promise(resolve => setTimeout(resolve, 0));
+  const handleDelete = async (find: Find) => {
+    if (!window.confirm('Are you sure you want to delete this find?')) return;
+    
+    try {
+      await findService.deleteFind(find.id, find.imageUrl);
+      setFinds(prevFinds => prevFinds.filter(f => f.id !== find.id));
+    } catch (err) {
+      setError("Failed to delete find. Please try again.");
+      console.error('Error deleting find:', err);
+    }
+  };
+
+  const handleShowForm = () => {
     setShowForm(!showForm);
   };
 
@@ -127,6 +73,7 @@ const FindsCatalog: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -144,34 +91,23 @@ const FindsCatalog: React.FC = () => {
     e.preventDefault();
     if (isSubmitting) return;
     
-    setIsSubmitting(true);
-    
     try {
+      setIsSubmitting(true);
+      
       if (newFind.what3words && !validateWhat3Words(newFind.what3words)) {
         alert("Please enter a valid what3words address (format: word.word.word)");
         return;
       }
       
-      await new Promise(resolve => setTimeout(resolve, 0));
-      
-      const updatedFinds = [...finds, { 
-        ...newFind, 
-        id: finds.length + 1, 
-        imageUrl: imagePreview || "/api/placeholder/300/200"
-      }];
-      
-      const savedSuccessfully = saveFinds(updatedFinds);
-      if (!savedSuccessfully) {
-        throw new Error("Failed to save finds to storage");
-      }
-      
-      setFinds(updatedFinds);
+      const savedFind = await findService.addFind(newFind, imageFile || undefined);
+      setFinds(prev => [savedFind, ...prev]);
       setShowForm(false);
       setNewFind(initialFind);
       setImagePreview("");
-      setStorageError("");
+      setImageFile(null);
+      setError("");
     } catch (err) {
-      setStorageError("Failed to save find. Storage might be full or disabled.");
+      setError("Failed to save find. Please try again.");
       console.error('Error in handleSubmit:', err);
     } finally {
       setIsSubmitting(false);
@@ -189,10 +125,10 @@ const FindsCatalog: React.FC = () => {
 
   return (
     <div className="p-4 max-w-6xl mx-auto">
-      {storageError && (
+      {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
           <strong className="font-bold">Error: </strong>
-          <span className="block sm:inline">{storageError}</span>
+          <span className="block sm:inline">{error}</span>
         </div>
       )}
 
@@ -217,8 +153,8 @@ const FindsCatalog: React.FC = () => {
                 type="text"
                 className="w-full p-2 border rounded"
                 value={newFind.name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                  setNewFind({...newFind, name: e.target.value})}
+                onChange={(e) => setNewFind({...newFind, name: e.target.value})}
+                required
               />
             </div>
             <div>
@@ -227,8 +163,8 @@ const FindsCatalog: React.FC = () => {
                 type="date"
                 className="w-full p-2 border rounded"
                 value={newFind.date}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                  setNewFind({...newFind, date: e.target.value})}
+                onChange={(e) => setNewFind({...newFind, date: e.target.value})}
+                required
               />
             </div>
             <div>
@@ -237,8 +173,7 @@ const FindsCatalog: React.FC = () => {
                 type="text"
                 className="w-full p-2 border rounded"
                 value={newFind.location}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                  setNewFind({...newFind, location: e.target.value})}
+                onChange={(e) => setNewFind({...newFind, location: e.target.value})}
               />
             </div>
             <div>
@@ -249,8 +184,7 @@ const FindsCatalog: React.FC = () => {
                   placeholder="word.word.word"
                   className="w-full p-2 border rounded"
                   value={newFind.what3words}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                    setNewFind({...newFind, what3words: e.target.value.toLowerCase()})}
+                  onChange={(e) => setNewFind({...newFind, what3words: e.target.value.toLowerCase()})}
                 />
                 <a 
                   href={`https://what3words.com/${newFind.what3words}`}
@@ -268,8 +202,7 @@ const FindsCatalog: React.FC = () => {
                 type="text"
                 className="w-full p-2 border rounded"
                 value={newFind.depth}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                  setNewFind({...newFind, depth: e.target.value})}
+                onChange={(e) => setNewFind({...newFind, depth: e.target.value})}
               />
             </div>
             <div>
@@ -278,8 +211,7 @@ const FindsCatalog: React.FC = () => {
                 type="text"
                 className="w-full p-2 border rounded"
                 value={newFind.metalType}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                  setNewFind({...newFind, metalType: e.target.value})}
+                onChange={(e) => setNewFind({...newFind, metalType: e.target.value})}
               />
             </div>
             <div>
@@ -287,8 +219,7 @@ const FindsCatalog: React.FC = () => {
               <select
                 className="w-full p-2 border rounded"
                 value={newFind.condition}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
-                  setNewFind({...newFind, condition: e.target.value})}
+                onChange={(e) => setNewFind({...newFind, condition: e.target.value})}
               >
                 <option value="">Select condition...</option>
                 <option value="Excellent">Excellent</option>
@@ -302,37 +233,34 @@ const FindsCatalog: React.FC = () => {
               <textarea
                 className="w-full p-2 border rounded"
                 value={newFind.notes}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => 
-                  setNewFind({...newFind, notes: e.target.value})}
+                onChange={(e) => setNewFind({...newFind, notes: e.target.value})}
               />
             </div>
             <div className="col-span-2">
               <label className="block mb-2">Photo</label>
-              <div className="flex gap-4 items-start">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="flex-1 p-2 border rounded"
-                />
-                {imagePreview && (
-                  <div className="w-32 h-32 relative">
-                    <Image
-                      src={imagePreview}
-                      alt="Preview"
-                      width={128}
-                      height={128}
-                      className="object-cover rounded"
-                    />
-                  </div>
-                )}
-              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="w-full p-2 border rounded"
+              />
+              {imagePreview && (
+                <div className="mt-2">
+                  <Image
+                    src={imagePreview}
+                    alt="Preview"
+                    width={200}
+                    height={200}
+                    className="object-cover rounded"
+                  />
+                </div>
+              )}
             </div>
-            <div className="col-span-2 flex gap-4">
+            <div className="col-span-2 flex gap-4 mt-4">
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
+                className="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
               >
                 Cancel
               </button>
@@ -340,10 +268,8 @@ const FindsCatalog: React.FC = () => {
                 type="submit"
                 disabled={isSubmitting}
                 className={`flex-1 ${
-                  isSubmitting 
-                    ? 'bg-gray-400' 
-                    : 'bg-green-500 hover:bg-green-600'
-                } text-white px-4 py-2 rounded transition-colors`}
+                  isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
+                } text-white px-4 py-2 rounded`}
               >
                 {isSubmitting ? 'Saving...' : 'Save Find'}
               </button>
@@ -356,7 +282,7 @@ const FindsCatalog: React.FC = () => {
         {finds.map((find) => (
           <div key={find.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow relative">
             <button
-              onClick={() => handleDelete(find.id)}
+              onClick={() => handleDelete(find)}
               className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-red-50 z-10"
               title="Delete find"
             >
@@ -411,4 +337,4 @@ const FindsCatalog: React.FC = () => {
   );
 };
 
-export default FindsCatalog;
+export default FindsCatalog;0*6
