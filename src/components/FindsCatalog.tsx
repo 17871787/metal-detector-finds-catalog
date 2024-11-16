@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { MapPin, Copy, Check, Plus } from 'lucide-react';
 
-// Define the shape of a find
 interface Find {
   id: number;
   name: string;
@@ -18,10 +17,8 @@ interface Find {
   imageUrl: string;
 }
 
-// Type for new finds (before they have an id and imageUrl)
 type NewFind = Omit<Find, 'id' | 'imageUrl'>;
 
-// Initial state for the new find form
 const initialFind: NewFind = {
   name: "",
   date: "",
@@ -55,11 +52,23 @@ const FindsCatalog: React.FC = () => {
   const [copied, setCopied] = useState<boolean>(false);
   const [newFind, setNewFind] = useState<NewFind>(initialFind);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [imagePreview, setImagePreview] = useState<string>("");
 
   const handleCopyW3W = (words: string): void => {
     navigator.clipboard.writeText(words);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const validateWhat3Words = (words: string): boolean => {
@@ -79,17 +88,17 @@ const FindsCatalog: React.FC = () => {
         return;
       }
       
-      // Use setTimeout to prevent UI blocking
       await new Promise(resolve => setTimeout(resolve, 0));
       
       setFinds(prevFinds => [...prevFinds, { 
         ...newFind, 
         id: prevFinds.length + 1, 
-        imageUrl: "/api/placeholder/300/200" 
+        imageUrl: imagePreview || "/api/placeholder/300/200"
       }]);
       
       setShowForm(false);
       setNewFind(initialFind);
+      setImagePreview("");
     } finally {
       setIsSubmitting(false);
     }
@@ -206,6 +215,26 @@ const FindsCatalog: React.FC = () => {
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => 
                   setNewFind({...newFind, notes: e.target.value})}
               />
+            </div>
+            <div className="col-span-2">
+              <label className="block mb-2">Photo</label>
+              <div className="flex gap-4 items-start">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="flex-1 p-2 border rounded"
+                />
+                {imagePreview && (
+                  <div className="w-32 h-32 relative">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover rounded"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             <div className="col-span-2 flex gap-4">
               <button
