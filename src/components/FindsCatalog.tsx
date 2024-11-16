@@ -54,6 +54,7 @@ const FindsCatalog: React.FC = () => {
   const [showForm, setShowForm] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
   const [newFind, setNewFind] = useState<NewFind>(initialFind);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const handleCopyW3W = (words: string): void => {
     navigator.clipboard.writeText(words);
@@ -66,19 +67,32 @@ const FindsCatalog: React.FC = () => {
     return regex.test(words);
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    if (newFind.what3words && !validateWhat3Words(newFind.what3words)) {
-      alert("Please enter a valid what3words address (format: word.word.word)");
-      return;
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      if (newFind.what3words && !validateWhat3Words(newFind.what3words)) {
+        alert("Please enter a valid what3words address (format: word.word.word)");
+        return;
+      }
+      
+      // Use setTimeout to prevent UI blocking
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      setFinds(prevFinds => [...prevFinds, { 
+        ...newFind, 
+        id: prevFinds.length + 1, 
+        imageUrl: "/api/placeholder/300/200" 
+      }]);
+      
+      setShowForm(false);
+      setNewFind(initialFind);
+    } finally {
+      setIsSubmitting(false);
     }
-    setFinds([...finds, { 
-      ...newFind, 
-      id: finds.length + 1, 
-      imageUrl: "/api/placeholder/300/200" 
-    }]);
-    setShowForm(false);
-    setNewFind(initialFind);
   };
 
   return (
@@ -195,9 +209,14 @@ const FindsCatalog: React.FC = () => {
             </div>
             <button
               type="submit"
-              className="col-span-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+              disabled={isSubmitting}
+              className={`col-span-2 ${
+                isSubmitting 
+                  ? 'bg-gray-400' 
+                  : 'bg-green-500 hover:bg-green-600'
+              } text-white px-4 py-2 rounded transition-colors`}
             >
-              Save Find
+              {isSubmitting ? 'Saving...' : 'Save Find'}
             </button>
           </form>
         </div>
