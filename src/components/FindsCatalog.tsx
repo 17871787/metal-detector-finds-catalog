@@ -207,17 +207,26 @@ const FindsCatalog: React.FC = () => {
                   setNewFind({...newFind, notes: e.target.value})}
               />
             </div>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`col-span-2 ${
-                isSubmitting 
-                  ? 'bg-gray-400' 
-                  : 'bg-green-500 hover:bg-green-600'
-              } text-white px-4 py-2 rounded transition-colors`}
-            >
-              {isSubmitting ? 'Saving...' : 'Save Find'}
-            </button>
+            <div className="col-span-2 flex gap-4">
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`flex-1 ${
+                  isSubmitting 
+                    ? 'bg-gray-400' 
+                    : 'bg-green-500 hover:bg-green-600'
+                } text-white px-4 py-2 rounded transition-colors`}
+              >
+                {isSubmitting ? 'Saving...' : 'Save Find'}
+              </button>
+            </div>
           </form>
         </div>
       )}
