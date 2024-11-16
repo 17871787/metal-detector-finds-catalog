@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MapPin, Copy, Check, Plus, Loader } from 'lucide-react';
+import { MapPin, Copy, Check, Plus, Loader, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 
 interface Find {
@@ -84,7 +84,7 @@ const FindsCatalog: React.FC = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate loading
+        await new Promise(resolve => setTimeout(resolve, 500));
         const loadedFinds = loadFinds();
         if (loadedFinds === null) {
           setStorageError("Unable to load saved finds. Storage might be disabled.");
@@ -101,6 +101,17 @@ const FindsCatalog: React.FC = () => {
 
     loadInitialData();
   }, []);
+
+  const handleDelete = (findId: number) => {
+    if (window.confirm('Are you sure you want to delete this find?')) {
+      const updatedFinds = finds.filter(find => find.id !== findId);
+      if (saveFinds(updatedFinds)) {
+        setFinds(updatedFinds);
+      } else {
+        setStorageError("Failed to save after deletion. Please try again.");
+      }
+    }
+  };
 
   const handleShowForm = async () => {
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -343,7 +354,14 @@ const FindsCatalog: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {finds.map((find) => (
-          <div key={find.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+          <div key={find.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow relative">
+            <button
+              onClick={() => handleDelete(find.id)}
+              className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-red-50 z-10"
+              title="Delete find"
+            >
+              <Trash2 className="text-red-500" size={20} />
+            </button>
             <div className="relative w-full h-48">
               <Image
                 src={find.imageUrl}
