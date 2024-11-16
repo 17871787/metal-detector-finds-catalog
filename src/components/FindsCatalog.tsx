@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { MapPin, Copy, Check, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Copy, Check, Plus, Loader } from 'lucide-react';
 
 interface Find {
   id: number;
@@ -31,28 +31,79 @@ const initialFind: NewFind = {
   notes: ""
 };
 
-const FindsCatalog: React.FC = () => {
-  const [finds, setFinds] = useState<Find[]>([
-    {
-      id: 1,
-      name: "1942 Silver Quarter",
-      date: "2024-03-15",
-      location: "Thompson Park",
-      coordinates: "40.7128° N, 74.0060° W",
-      what3words: "filled.count.soap",
-      depth: "6 inches",
-      metalType: "Silver",
-      condition: "Good",
-      notes: "Found near old playground area",
-      imageUrl: "/api/placeholder/300/200"
-    }
-  ]);
+const STORAGE_KEY = 'metal-detector-finds';
 
+const loadFinds = (): Find[] | null => {
+  try {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [
+        {
+          id: 1,
+          name: "1942 Silver Quarter",
+          date: "2024-03-15",
+          location: "Thompson Park",
+          coordinates: "40.7128° N, 74.0060° W",
+          what3words: "filled.count.soap",
+          depth: "6 inches",
+          metalType: "Silver",
+          condition: "Good",
+          notes: "Found near old playground area",
+          imageUrl: "/api/placeholder/300/200"
+        }
+      ];
+    }
+  } catch (error) {
+    console.error('Error loading finds:', error);
+    return null;
+  }
+  return [];
+};
+
+const saveFinds = (finds: Find[]): boolean => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(finds));
+    return true;
+  } catch (error) {
+    console.error('Error saving finds:', error);
+    return false;
+  }
+};
+
+const FindsCatalog: React.FC = () => {
+  const [finds, setFinds] = useState<Find[]>([]);
   const [showForm, setShowForm] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
   const [newFind, setNewFind] = useState<NewFind>(initialFind);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [storageError, setStorageError] = useState<string>("");
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate loading
+        const loadedFinds = loadFinds();
+        if (loadedFinds === null) {
+          setStorageError("Unable to load saved finds. Storage might be disabled.");
+        } else {
+          setFinds(loadedFinds);
+        }
+      } catch (error) {
+        setStorageError("Error loading saved finds.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, []);
+
+  const handleShowForm = async () => {
+    await new Promise(resolve => setTimeout(resolve, 0));
+    setShowForm(!showForm);
+  };
 
   const handleCopyW3W = (words: string): void => {
     navigator.clipboard.writeText(words);
@@ -90,26 +141,51 @@ const FindsCatalog: React.FC = () => {
       
       await new Promise(resolve => setTimeout(resolve, 0));
       
-      setFinds(prevFinds => [...prevFinds, { 
+      const updatedFinds = [...finds, { 
         ...newFind, 
-        id: prevFinds.length + 1, 
+        id: finds.length + 1, 
         imageUrl: imagePreview || "/api/placeholder/300/200"
-      }]);
+      }];
       
+      const savedSuccessfully = saveFinds(updatedFinds);
+      if (!savedSuccessfully) {
+        throw new Error("Failed to save finds to storage");
+      }
+      
+      setFinds(updatedFinds);
       setShowForm(false);
       setNewFind(initialFind);
       setImagePreview("");
+      setStorageError("");
+    } catch (error) {
+      setStorageError("Failed to save find. Storage might be full or disabled.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="w-8 h-8 animate-spin text-blue-500" />
+        <span className="ml-2">Loading your finds...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 max-w-6xl mx-auto">
+      {storageError && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+          <strong className="font-bold">Error: </strong>
+          <span className="block sm:inline">{storageError}</span>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Metal Detecting Finds Catalog</h1>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={handleShowForm}
           className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           <Plus size={20} />
