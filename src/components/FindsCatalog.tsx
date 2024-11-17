@@ -36,7 +36,7 @@ const FindsCatalog: React.FC = () => {
     loadFinds();
   }, []);
 
-  const loadFinds = async () => {
+  const loadFinds: () => Promise<void> = async () => {
     try {
       setIsLoading(true);
       const loadedFinds = await findService.getFinds();
@@ -50,7 +50,7 @@ const FindsCatalog: React.FC = () => {
     }
   };
 
-  const handleDelete = async (find: Find) => {
+  const handleDelete: (find: Find) => Promise<void> = async (find: Find) => {
     if (!window.confirm('Are you sure you want to delete this find?')) return;
     setIsLoading(true);
     
@@ -64,7 +64,7 @@ const FindsCatalog: React.FC = () => {
     }
   };
 
-  const handleShowForm = () => {
+  const handleShowForm: () => void = () => {
     setShowForm(!showForm);
     setEditingFind(null);
     setFormData(initialFind);
@@ -72,7 +72,7 @@ const FindsCatalog: React.FC = () => {
     setImageFile(null);
   };
 
-  const handleEdit = (find: Find) => {
+  const handleEdit: (find: Find) => void = (find: Find) => {
     setEditingFind(find);
     setShowForm(true);
     setFormData({
@@ -88,13 +88,13 @@ const FindsCatalog: React.FC = () => {
     });
   };
 
-  const handleCopyW3W = (words: string): void => {
+  const handleCopyW3W: (words: string) => void = (words: string): void => {
     navigator.clipboard.writeText(words);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
@@ -106,14 +106,14 @@ const FindsCatalog: React.FC = () => {
     }
   };
 
-  const validateWhat3Words = (words: string): boolean => {
+  const validateWhat3Words: (words: string) => boolean = (words: string): boolean => {
     const regex = /^[a-zA-Z]+\.[a-zA-Z]+\.[a-zA-Z]+$/;
     return regex.test(words);
   };
 
-  const debounce = (func: (...args: any[]) => void, delay: number) => {
+  const debounce = <T extends (...args: any[]) => void>(func: T, delay: number) => {
     let timer: NodeJS.Timeout;
-    return (...args: any[]) => {
+    return (...args: Parameters<T>) => {
       clearTimeout(timer);
       timer = setTimeout(() => {
         func(...args);
@@ -129,7 +129,7 @@ const FindsCatalog: React.FC = () => {
     }));
   }, 300);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  const handleSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void> = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (isSubmitting) return;
     
@@ -170,7 +170,7 @@ const FindsCatalog: React.FC = () => {
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel: () => void = () => {
     setShowForm(false);
     setFormData(initialFind);
     setImagePreview("");
@@ -178,7 +178,7 @@ const FindsCatalog: React.FC = () => {
     setEditingFind(null);
   };
 
-  const handleImageClick = (find: Find) => {
+  const handleImageClick: (find: Find) => void = (find: Find) => {
     if (editingFind) {
       // Prevent image click during edit mode
       return;
