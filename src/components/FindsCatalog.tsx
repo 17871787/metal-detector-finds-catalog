@@ -111,13 +111,23 @@ const FindsCatalog: React.FC = () => {
     return regex.test(words);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const debounce = (func: Function, delay: number) => {
+    let timer: NodeJS.Timeout;
+    return (...args: any[]) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        func(...args);
+      }, delay);
+    };
+  };
+
+  const debouncedInputChange = debounce((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, 300);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -168,6 +178,14 @@ const FindsCatalog: React.FC = () => {
     setEditingFind(null);
   };
 
+  const handleImageClick = (find: Find) => {
+    if (editingFind) {
+      // Prevent image click during edit mode
+      return;
+    }
+    setSelectedImage(find.imageUrl);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -215,7 +233,7 @@ const FindsCatalog: React.FC = () => {
                 name="name"
                 className="w-full p-2 border rounded"
                 value={formData.name}
-                onChange={handleInputChange}
+                onChange={debouncedInputChange}
                 required
               />
             </div>
@@ -226,7 +244,7 @@ const FindsCatalog: React.FC = () => {
                 name="date"
                 className="w-full p-2 border rounded"
                 value={formData.date}
-                onChange={handleInputChange}
+                onChange={debouncedInputChange}
                 required
               />
             </div>
@@ -237,7 +255,7 @@ const FindsCatalog: React.FC = () => {
                 name="location"
                 className="w-full p-2 border rounded"
                 value={formData.location}
-                onChange={handleInputChange}
+                onChange={debouncedInputChange}
               />
             </div>
             <div>
@@ -249,7 +267,7 @@ const FindsCatalog: React.FC = () => {
                   placeholder="word.word.word"
                   className="w-full p-2 border rounded"
                   value={formData.what3words}
-                  onChange={handleInputChange}
+                  onChange={debouncedInputChange}
                 />
                 <a 
                   href={`https://what3words.com/${formData.what3words}`}
@@ -268,7 +286,7 @@ const FindsCatalog: React.FC = () => {
                 name="depth"
                 className="w-full p-2 border rounded"
                 value={formData.depth}
-                onChange={handleInputChange}
+                onChange={debouncedInputChange}
               />
             </div>
             <div>
@@ -278,7 +296,7 @@ const FindsCatalog: React.FC = () => {
                 name="metalType"
                 className="w-full p-2 border rounded"
                 value={formData.metalType}
-                onChange={handleInputChange}
+                onChange={debouncedInputChange}
               />
             </div>
             <div>
@@ -287,7 +305,7 @@ const FindsCatalog: React.FC = () => {
                 name="condition"
                 className="w-full p-2 border rounded"
                 value={formData.condition}
-                onChange={handleInputChange}
+                onChange={debouncedInputChange}
               >
                 <option value="">Select condition...</option>
                 <option value="Excellent">Excellent</option>
@@ -302,7 +320,7 @@ const FindsCatalog: React.FC = () => {
                 name="notes"
                 className="w-full p-2 border rounded"
                 value={formData.notes}
-                onChange={handleInputChange}
+                onChange={debouncedInputChange}
               />
             </div>
             <div className="col-span-2">
@@ -369,7 +387,7 @@ const FindsCatalog: React.FC = () => {
             {/* Make image clickable */}
             <div 
               className="relative w-full h-48 cursor-pointer"
-              onClick={() => setSelectedImage(find.imageUrl)}
+              onClick={() => handleImageClick(find)}
             >
               <Image
                 src={find.imageUrl || '/placeholder.png'}
