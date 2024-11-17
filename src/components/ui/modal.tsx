@@ -8,21 +8,21 @@ interface ModalProps {
   children: React.ReactNode;
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
+export const Modal = ({ isOpen, onClose, children }: ModalProps) => {
   if (!isOpen) return null;
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div 
-        className="relative max-w-[90vw] max-h-[90vh] overflow-hidden"
+        className="relative bg-white rounded-lg max-w-4xl w-full"
         onClick={e => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute right-2 top-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 z-50"
+          className="absolute -top-2 -right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 z-50"
         >
           <X size={20} />
         </button>
