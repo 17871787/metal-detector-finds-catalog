@@ -111,7 +111,7 @@ const FindsCatalog: React.FC = () => {
     return regex.test(words);
   };
 
-  const debounce = <T extends (...args: unknown[]) => void>(func: T, delay: number) => {
+  const debounce = <T extends (...args: any[]) => void>(func: T, delay: number) => {
     let timer: NodeJS.Timeout;
     return (...args: Parameters<T>) => {
       clearTimeout(timer);
