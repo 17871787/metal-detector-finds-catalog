@@ -1,5 +1,3 @@
-// src/lib/firebase/findService.ts
-
 // src/services/findservice.ts
 import { db, storage } from '../lib/firebase/firebase';
 import { 
@@ -9,7 +7,9 @@ import {
   doc, 
   getDocs, 
   query, 
-  orderBy 
+  orderBy,
+  updateDoc,
+  getDoc
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Find, NewFind } from '../types/finds';
@@ -94,6 +94,52 @@ class FindService {
     } catch (error) {
       console.error('Error deleting find:', error);
       throw new Error('Failed to delete find');
+    }
+  }
+
+  async updateFind(id: string, updates: NewFind, newImageFile?: File): Promise<void> {
+    try {
+      let imageUrl = undefined;
+      
+      if (newImageFile) {
+        // Upload new image if provided
+        imageUrl = await this.uploadImage(newImageFile);
+        
+        // Get the old find to delete its image if it exists
+        const oldFind = await this.getFind(id);
+        if (oldFind?.imageUrl) {
+          await this.deleteImage(oldFind.imageUrl);
+        }
+      }
+
+      const findRef = doc(this.collection, id);
+      await updateDoc(findRef, {
+        ...updates,
+        ...(imageUrl && { imageUrl }),
+        updatedAt: new Date()
+      });
+    } catch (error) {
+      console.error('Error updating find:', error);
+      throw new Error('Failed to update find');
+    }
+  }
+
+  // Add this helper method if you don't have it
+  async getFind(id: string): Promise<Find | null> {
+    try {
+      const docRef = doc(this.collection, id);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        return {
+          id: docSnap.id,
+          ...docSnap.data()
+        } as Find;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting find:', error);
+      throw error;
     }
   }
 }

@@ -1,4 +1,4 @@
-// src/components/ui/Modal.tsx
+// src/components/ui/modal.tsx
 import React from 'react';
 import { X } from 'lucide-react';
 
@@ -17,7 +17,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
       onClick={onClose}
     >
       <div 
-        className="relative bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden"
+        className="relative max-w-[90vw] max-h-[90vh] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         <button

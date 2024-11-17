@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MapPin, Copy, Check, Plus, Loader, Trash2 } from 'lucide-react';
+import { MapPin, Copy, Check, Plus, Loader, Trash2, Edit2 } from 'lucide-react';
 import Image from 'next/image';
 import { Modal } from '@/components/ui/modal';
 import { Find, NewFind } from '../types/finds';
@@ -30,6 +30,7 @@ const FindsCatalog: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [editingFind, setEditingFind] = useState<Find | null>(null);
 
   useEffect(() => {
     loadFinds();
@@ -56,14 +57,36 @@ const FindsCatalog: React.FC = () => {
     try {
       await findService.deleteFind(find.id, find.imageUrl);
       setFinds(prevFinds => prevFinds.filter(f => f.id !== find.id));
-    setIsLoading(false);
+      setIsLoading(false);
     } catch (err) {
       setError("Failed to delete find. Please try again.");
       console.error('Error deleting find:', err);
     }
   };
 
-  const handleShowForm = () => { setShowForm(!showForm); };
+  const handleShowForm = () => {
+    setShowForm(!showForm);
+    setEditingFind(null);
+    setFormData(initialFind);
+    setImagePreview("");
+    setImageFile(null);
+  };
+
+  const handleEdit = (find: Find) => {
+    setEditingFind(find);
+    setShowForm(true);
+    setFormData({
+      name: find.name,
+      date: find.date,
+      location: find.location,
+      coordinates: find.coordinates,
+      what3words: find.what3words,
+      depth: find.depth,
+      metalType: find.metalType,
+      condition: find.condition,
+      notes: find.notes
+    });
+  };
 
   const handleCopyW3W = (words: string): void => {
     navigator.clipboard.writeText(words);
@@ -107,13 +130,27 @@ const FindsCatalog: React.FC = () => {
         alert("Please enter a valid what3words address (format: word.word.word)");
         return;
       }
+
+      if (editingFind) {
+        // Update existing find
+        await findService.updateFind(editingFind.id, formData, imageFile || undefined);
+        const updatedFinds = finds.map(f => 
+          f.id === editingFind.id 
+            ? { ...f, ...formData, imageUrl: imageFile ? URL.createObjectURL(imageFile) : f.imageUrl }
+            : f
+        );
+        setFinds(updatedFinds);
+      } else {
+        // Create new find
+        const savedFind = await findService.addFind(formData, imageFile || undefined);
+        setFinds(prev => [savedFind, ...prev]);
+      }
       
-      const savedFind = await findService.addFind(formData, imageFile || undefined);
-      setFinds(prev => [savedFind, ...prev]);
       setShowForm(false);
       setFormData(initialFind);
       setImagePreview("");
       setImageFile(null);
+      setEditingFind(null);
       setError("");
     } catch (err) {
       setError("Failed to save find. Please try again.");
@@ -121,6 +158,14 @@ const FindsCatalog: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setFormData(initialFind);
+    setImagePreview("");
+    setImageFile(null);
+    setEditingFind(null);
   };
 
   if (isLoading) {
@@ -153,13 +198,15 @@ const FindsCatalog: React.FC = () => {
           ) : (
             <Plus size={20} />
           )}
-          Add New Find
+          {editingFind ? 'Edit Find' : 'Add New Find'}
         </button>
       </div>
 
       {showForm && (
         <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Add New Find</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            {editingFind ? 'Edit Find' : 'Add New Find'}
+          </h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
             <div>
               <label className="block mb-2">Name</label>
@@ -281,7 +328,7 @@ const FindsCatalog: React.FC = () => {
             <div className="col-span-2 flex gap-4 mt-4">
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={handleCancel}
                 className="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
               >
                 Cancel
@@ -293,7 +340,7 @@ const FindsCatalog: React.FC = () => {
                   isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
                 } text-white px-4 py-2 rounded`}
               >
-                {isSubmitting ? 'Saving...' : 'Save Find'}
+                {isSubmitting ? 'Saving...' : (editingFind ? 'Update Find' : 'Save Find')}
               </button>
             </div>
           </form>
@@ -303,18 +350,22 @@ const FindsCatalog: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {finds.map((find) => (
           <div key={find.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow relative">
-            <button
-              onClick={() => handleDelete(find)}
-              className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-red-50 z-10 disabled:opacity-50"
-              disabled={isLoading}
-              title="Delete find"
-            >
-              {isLoading ? (
-                <Loader className="w-5 h-5 animate-spin text-red-500" />
-              ) : (
+            <div className="absolute top-2 right-2 flex gap-2 z-10">
+              <button
+                onClick={() => handleEdit(find)}
+                className="p-2 bg-white rounded-full shadow-md hover:bg-blue-50"
+                title="Edit find"
+              >
+                <Edit2 className="text-blue-500" size={20} />
+              </button>
+              <button
+                onClick={() => handleDelete(find)}
+                className="p-2 bg-white rounded-full shadow-md hover:bg-red-50"
+                title="Delete find"
+              >
                 <Trash2 className="text-red-500" size={20} />
-              )}
-            </button>
+              </button>
+            </div>
             {/* Make image clickable */}
             <div 
               className="relative w-full h-48 cursor-pointer"
