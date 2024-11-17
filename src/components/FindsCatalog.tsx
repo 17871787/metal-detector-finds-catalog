@@ -111,7 +111,7 @@ const FindsCatalog: React.FC = () => {
     return regex.test(words);
   };
 
-  const debounce = <T extends (...args: any[]) => void>(func: T, delay: number) => {
+  const debounce = <T extends (...args: unknown[]) => void>(func: T, delay: number) => {
     let timer: NodeJS.Timeout;
     return (...args: Parameters<T>) => {
       clearTimeout(timer);
@@ -333,7 +333,7 @@ const FindsCatalog: React.FC = () => {
               />
               {imagePreview && (
                 <div className="mt-2">
-                  <Image
+                  <img
                     src={imagePreview}
                     alt="Preview"
                     width={200}
@@ -394,6 +394,7 @@ const FindsCatalog: React.FC = () => {
                 alt={find.name}
                 fill
                 className="object-cover hover:opacity-90 transition-opacity"
+                loading="eager"  // This will disable lazy loading
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = '/placeholder.png';
@@ -449,6 +450,7 @@ const FindsCatalog: React.FC = () => {
             alt="Enlarged view"
             fill
             className="object-contain"
+            loading="eager"  // This will disable lazy loading
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.src = '/placeholder.png';
