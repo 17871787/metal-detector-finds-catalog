@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Copy, Check, Plus, Loader, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import { Find, NewFind } from '@/types/finds';
-import { findService } from '../services/findservice';
+import { Modal } from '@/components/ui/modal';
+import { Find, NewFind } from '../types/finds';
+import { findService } from '@/services/findservice';
 
 const initialFind: NewFind = {
   name: "",
@@ -22,12 +23,13 @@ const FindsCatalog: React.FC = () => {
   const [finds, setFinds] = useState<Find[]>([]);
   const [showForm, setShowForm] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
-  const [newFind, setNewFind] = useState<NewFind>(initialFind);
+  const [formData, setFormData] = useState<NewFind>(initialFind);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     loadFinds();
@@ -86,6 +88,14 @@ const FindsCatalog: React.FC = () => {
     return regex.test(words);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -93,15 +103,15 @@ const FindsCatalog: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      if (newFind.what3words && !validateWhat3Words(newFind.what3words)) {
+      if (formData.what3words && !validateWhat3Words(formData.what3words)) {
         alert("Please enter a valid what3words address (format: word.word.word)");
         return;
       }
       
-      const savedFind = await findService.addFind(newFind, imageFile || undefined);
+      const savedFind = await findService.addFind(formData, imageFile || undefined);
       setFinds(prev => [savedFind, ...prev]);
       setShowForm(false);
-      setNewFind(initialFind);
+      setFormData(initialFind);
       setImagePreview("");
       setImageFile(null);
       setError("");
@@ -155,9 +165,10 @@ const FindsCatalog: React.FC = () => {
               <label className="block mb-2">Name</label>
               <input
                 type="text"
+                name="name"
                 className="w-full p-2 border rounded"
-                value={newFind.name}
-                onChange={(e) => setNewFind({...newFind, name: e.target.value})}
+                value={formData.name}
+                onChange={handleInputChange}
                 required
               />
             </div>
@@ -165,9 +176,10 @@ const FindsCatalog: React.FC = () => {
               <label className="block mb-2">Date Found</label>
               <input
                 type="date"
+                name="date"
                 className="w-full p-2 border rounded"
-                value={newFind.date}
-                onChange={(e) => setNewFind({...newFind, date: e.target.value})}
+                value={formData.date}
+                onChange={handleInputChange}
                 required
               />
             </div>
@@ -175,9 +187,10 @@ const FindsCatalog: React.FC = () => {
               <label className="block mb-2">Location</label>
               <input
                 type="text"
+                name="location"
                 className="w-full p-2 border rounded"
-                value={newFind.location}
-                onChange={(e) => setNewFind({...newFind, location: e.target.value})}
+                value={formData.location}
+                onChange={handleInputChange}
               />
             </div>
             <div>
@@ -185,13 +198,14 @@ const FindsCatalog: React.FC = () => {
               <div className="flex gap-2">
                 <input
                   type="text"
+                  name="what3words"
                   placeholder="word.word.word"
                   className="w-full p-2 border rounded"
-                  value={newFind.what3words}
-                  onChange={(e) => setNewFind({...newFind, what3words: e.target.value.toLowerCase()})}
+                  value={formData.what3words}
+                  onChange={handleInputChange}
                 />
                 <a 
-                  href={`https://what3words.com/${newFind.what3words}`}
+                  href={`https://what3words.com/${formData.what3words}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-gray-100 p-2 rounded hover:bg-gray-200"
@@ -204,26 +218,29 @@ const FindsCatalog: React.FC = () => {
               <label className="block mb-2">Depth</label>
               <input
                 type="text"
+                name="depth"
                 className="w-full p-2 border rounded"
-                value={newFind.depth}
-                onChange={(e) => setNewFind({...newFind, depth: e.target.value})}
+                value={formData.depth}
+                onChange={handleInputChange}
               />
             </div>
             <div>
               <label className="block mb-2">Metal Type</label>
               <input
                 type="text"
+                name="metalType"
                 className="w-full p-2 border rounded"
-                value={newFind.metalType}
-                onChange={(e) => setNewFind({...newFind, metalType: e.target.value})}
+                value={formData.metalType}
+                onChange={handleInputChange}
               />
             </div>
             <div>
               <label className="block mb-2">Condition</label>
               <select
+                name="condition"
                 className="w-full p-2 border rounded"
-                value={newFind.condition}
-                onChange={(e) => setNewFind({...newFind, condition: e.target.value})}
+                value={formData.condition}
+                onChange={handleInputChange}
               >
                 <option value="">Select condition...</option>
                 <option value="Excellent">Excellent</option>
@@ -235,9 +252,10 @@ const FindsCatalog: React.FC = () => {
             <div className="col-span-2">
               <label className="block mb-2">Notes</label>
               <textarea
+                name="notes"
                 className="w-full p-2 border rounded"
-                value={newFind.notes}
-                onChange={(e) => setNewFind({...newFind, notes: e.target.value})}
+                value={formData.notes}
+                onChange={handleInputChange}
               />
             </div>
             <div className="col-span-2">
@@ -297,12 +315,20 @@ const FindsCatalog: React.FC = () => {
                 <Trash2 className="text-red-500" size={20} />
               )}
             </button>
-            <div className="relative w-full h-48">
+            {/* Make image clickable */}
+            <div 
+              className="relative w-full h-48 cursor-pointer"
+              onClick={() => setSelectedImage(find.imageUrl)}
+            >
               <Image
-                src={find.imageUrl}
+                src={find.imageUrl || '/placeholder.png'}
                 alt={find.name}
                 fill
-                className="object-cover"
+                className="object-cover hover:opacity-90 transition-opacity"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/placeholder.png';
+                }}
               />
             </div>
             <div className="p-4">
@@ -342,6 +368,25 @@ const FindsCatalog: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Image Modal */}
+      <Modal
+        isOpen={!!selectedImage}
+        onClose={() => setSelectedImage(null)}
+      >
+        <div className="relative w-full h-[80vh]">
+          <Image
+            src={selectedImage || '/placeholder.png'}
+            alt="Enlarged view"
+            fill
+            className="object-contain"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = '/placeholder.png';
+            }}
+          />
+        </div>
+      </Modal>
     </div>
   );
 };
