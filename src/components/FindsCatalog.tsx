@@ -447,7 +447,8 @@ const FindsCatalog: React.FC = () => {
       ================= */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 transition-all">
         {finds.map((find) => (
-          <div key={find.id} className="bg-white rounded-xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 border border-gray-100">
+          <div key={find.id} className="relative bg-white rounded-xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 border border-gray-100">
+            {/* Edit/Delete buttons - Make sure these are inside each card */}
             <div className="absolute top-3 right-3 flex gap-2 z-10 opacity-90 hover:opacity-100">
               <button
                 onClick={() => handleEdit(find)}
