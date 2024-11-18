@@ -554,24 +554,27 @@ const FindsCatalog: React.FC = () => {
       {/* =================
       17. IMAGE MODAL SECTION
       ================= */}
-      <Modal
-        isOpen={!!selectedImage}
-        onClose={() => setSelectedImage(null)}
-      >
-        <div className="relative w-full h-[80vh]">
-          <Image
-            src={selectedImage || '/placeholder.png'}
-            alt="Enlarged view"
-            fill
-            className="object-contain"
-            loading="eager"  // This will disable lazy loading
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = '/placeholder.png';
-            }}
-          />
-        </div>
-      </Modal>
+      {/* Image Modal */}
+<Modal
+  isOpen={!!selectedImage}
+  onClose={() => setSelectedImage(null)}
+>
+  <div className="relative w-full h-[90vh]">
+    <Image
+      src={selectedImage || '/placeholder.png'}
+      alt="Enlarged view"
+      fill
+      className="object-contain p-4"
+      priority
+      quality={100}
+      sizes="(max-width: 768px) 100vw, 90vw"
+      onError={(e) => {
+        const target = e.target as HTMLImageElement;
+        target.src = '/placeholder.png';
+      }}
+    />
+  </div>
+</Modal>
     </div>
   );
 };
