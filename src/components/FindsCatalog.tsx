@@ -111,23 +111,13 @@ const FindsCatalog: React.FC = () => {
     return regex.test(words);
   };
 
-  const debounce = <T extends (...args: any[]) => void>(func: T, delay: number) => {
-    let timer: NodeJS.Timeout;
-    return (...args: Parameters<T>) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        func(...args);
-      }, delay);
-    };
-  };
-
-  const debouncedInputChange = debounce((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  }, 300);
+  };
 
   const handleSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void> = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -233,7 +223,7 @@ const FindsCatalog: React.FC = () => {
                 name="name"
                 className="w-full p-2 border rounded"
                 value={formData.name}
-                onChange={(e) => debouncedInputChange(e)}
+                onChange={handleInputChange}
                 required
               />
             </div>
@@ -244,7 +234,7 @@ const FindsCatalog: React.FC = () => {
                 name="date"
                 className="w-full p-2 border rounded"
                 value={formData.date}
-                onChange={(e) => debouncedInputChange(e)}
+                onChange={handleInputChange}
                 required
               />
             </div>
@@ -255,7 +245,7 @@ const FindsCatalog: React.FC = () => {
                 name="location"
                 className="w-full p-2 border rounded"
                 value={formData.location}
-                onChange={(e) => debouncedInputChange(e)}
+                onChange={handleInputChange}
               />
             </div>
             <div>
@@ -267,7 +257,7 @@ const FindsCatalog: React.FC = () => {
                   placeholder="word.word.word"
                   className="w-full p-2 border rounded"
                   value={formData.what3words}
-                  onChange={(e) => debouncedInputChange(e)}
+                  onChange={handleInputChange}
                 />
                 <a 
                   href={`https://what3words.com/${formData.what3words}`}
@@ -286,7 +276,7 @@ const FindsCatalog: React.FC = () => {
                 name="depth"
                 className="w-full p-2 border rounded"
                 value={formData.depth}
-                onChange={(e) => debouncedInputChange(e)}
+                onChange={handleInputChange}
               />
             </div>
             <div>
@@ -296,7 +286,7 @@ const FindsCatalog: React.FC = () => {
                 name="metalType"
                 className="w-full p-2 border rounded"
                 value={formData.metalType}
-                onChange={(e) => debouncedInputChange(e)}
+                onChange={handleInputChange}
               />
             </div>
             <div>
@@ -305,7 +295,7 @@ const FindsCatalog: React.FC = () => {
                 name="condition"
                 className="w-full p-2 border rounded"
                 value={formData.condition}
-                onChange={(e) => debouncedInputChange(e)}
+                onChange={handleInputChange}
               >
                 <option value="">Select condition...</option>
                 <option value="Excellent">Excellent</option>
@@ -320,7 +310,7 @@ const FindsCatalog: React.FC = () => {
                 name="notes"
                 className="w-full p-2 border rounded"
                 value={formData.notes}
-                onChange={(e) => debouncedInputChange(e)}
+                onChange={handleInputChange}
               />
             </div>
             <div className="col-span-2">
