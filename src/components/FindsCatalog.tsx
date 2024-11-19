@@ -451,14 +451,20 @@ const FindsCatalog: React.FC = () => {
             {/* Edit/Delete buttons - Make sure these are inside each card */}
             <div className="absolute top-3 right-3 flex gap-2 z-10 opacity-90 hover:opacity-100">
               <button
-                onClick={() => handleEdit(find)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(find);
+                }}
                 className="p-2 bg-white rounded-full shadow-lg hover:bg-blue-50 transform hover:scale-105 transition-all"
                 title="Edit find"
               >
                 <Edit2 className="text-blue-500" size={20} />
               </button>
               <button
-                onClick={() => handleDelete(find)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(find);
+                }}
                 className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transform hover:scale-105 transition-all"
                 title="Delete find"
               >
