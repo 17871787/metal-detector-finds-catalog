@@ -475,12 +475,20 @@ const FindsCatalog: React.FC = () => {
               <button
                 onClick={async (e) => {
                   e.stopPropagation();
-                  await handleDelete(find);
+                  try {
+                    await handleDelete(find);
+                  } catch (error) {
+                    console.error('Button click error:', error);
+                  }
                 }}
-                className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transform hover:scale-105 transition-all"
+                className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transform hover:scale-105 transition-all disabled:opacity-50"
                 title="Delete find"
+                disabled={isLoading}
               >
-                <Trash2 className="text-red-500" size={20} />
+                {isLoading ? 
+                  <Loader className="w-5 h-5 animate-spin text-red-500" /> :
+                  <Trash2 className="text-red-500" size={20} />
+                }
               </button>
             </div>
             {/* ========================
