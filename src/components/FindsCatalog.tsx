@@ -1,4 +1,4 @@
-'use client';
+'use client'; 
 
 // ===================
 // 1. IMPORTS & LIBRARIES
@@ -71,12 +71,13 @@ const FindsCatalog: React.FC = () => {
   // ====================
 
   // Handle Delete Find
-  const handleDelete: (find: Find) => Promise<void> = async (find: Find) => {
+  const handleDelete = (e: React.MouseEvent, find: Find) => {
+    e.stopPropagation();
     if (!window.confirm('Are you sure you want to delete this find?')) return;
     setIsLoading(true);
     
     try {
-      await findService.deleteFind(find.id, find.imageUrl);
+      findService.deleteFind(find.id, find.imageUrl);
       setFinds(prevFinds => prevFinds.filter(f => f.id !== find.id));
       setIsLoading(false);
     } catch (err) {
@@ -95,7 +96,8 @@ const FindsCatalog: React.FC = () => {
   };
 
   // Handle Edit Find
-  const handleEdit: (find: Find) => void = (find: Find) => {
+  const handleEdit = (e: React.MouseEvent, find: Find) => {
+    e.stopPropagation();
     setEditingFind(find);
     setShowForm(true);
     setFormData({
@@ -451,20 +453,14 @@ const FindsCatalog: React.FC = () => {
             {/* Edit/Delete buttons - Make sure these are inside each card */}
             <div className="absolute top-3 right-3 flex gap-2 z-10 opacity-90 hover:opacity-100">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEdit(find);
-                }}
+                onClick={(e) => handleEdit(e, find)}
                 className="p-2 bg-white rounded-full shadow-lg hover:bg-blue-50 transform hover:scale-105 transition-all"
                 title="Edit find"
               >
                 <Edit2 className="text-blue-500" size={20} />
               </button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(find);
-                }}
+                onClick={(e) => handleDelete(e, find)}
                 className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transform hover:scale-105 transition-all"
                 title="Delete find"
               >
