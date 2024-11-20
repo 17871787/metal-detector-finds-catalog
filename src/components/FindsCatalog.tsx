@@ -71,15 +71,29 @@ const FindsCatalog: React.FC = () => {
   // ====================
 
   // Handle Delete Find
-  const handleDelete: (find: Find) => Promise<void> = async (find: Find) => {
-    if (!window.confirm('Are you sure you want to delete this find?')) return;
-    
+  const handleDelete = async (find: Find): Promise<void> => {
     try {
-      await findService.deleteFind(find.id, find.imageUrl);
-      setFinds(prevFinds => prevFinds.filter(f => f.id !== find.id));
+      // Show confirmation dialog first
+      if (!window.confirm('Are you sure you want to delete this find?')) return;
+      
+      setIsLoading(true); // Show loading state
+      
+      // Make the API call
+      const response = await findService.deleteFind(find.id, find.imageUrl);
+      console.log('Delete response:', response);
+      
+      // Update state with the filtered array
+      setFinds(prevFinds => {
+        const updatedFinds = prevFinds.filter(f => f.id !== find.id);
+        console.log('Updated finds:', updatedFinds);
+        return updatedFinds;
+      });
+
     } catch (err) {
-      setError("Failed to delete find. Please try again.");
-      console.error('Error deleting find:', err);
+      console.error('Error details:', err);
+      setError(`Failed to delete find: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -459,9 +473,9 @@ const FindsCatalog: React.FC = () => {
                 <Edit2 className="text-blue-500" size={20} />
               </button>
               <button
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation();
-                  handleDelete(find);
+                  await handleDelete(find);
                 }}
                 className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transform hover:scale-105 transition-all"
                 title="Delete find"
@@ -559,6 +573,7 @@ const FindsCatalog: React.FC = () => {
       {/* =================
       17. IMAGE MODAL SECTION
       ================= */}
+      {/* Image Modal */}
       <Modal
         isOpen={!!selectedImage}
         onClose={() => setSelectedImage(null)}
