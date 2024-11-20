@@ -71,56 +71,49 @@ const FindsCatalog: React.FC = () => {
   // ====================
 
   // Handle Delete Find
-  const handleDelete = async (find: Find): Promise<void> => {
+  const handleDelete = async (findId: string): Promise<void> => {
     try {
-      // Show confirmation dialog first
+      // Find the item to delete
+      const findToDelete = finds.find(f => f.id === findId);
+      if (!findToDelete) return;
+
+      // Show confirmation dialog
       if (!window.confirm('Are you sure you want to delete this find?')) return;
       
-      setIsLoading(true); // Show loading state
+      setIsLoading(true);
       
-      // Make the API call
-      const response = await findService.deleteFind(find.id, find.imageUrl);
-      console.log('Delete response:', response);
+      // Make the API call with the correct id and image URL
+      await findService.deleteFind(findId, findToDelete.imageUrl);
       
-      // Update state with the filtered array
-      setFinds(prevFinds => {
-        const updatedFinds = prevFinds.filter(f => f.id !== find.id);
-        console.log('Updated finds:', updatedFinds);
-        return updatedFinds;
-      });
-
+      // Update state after successful deletion
+      setFinds(prevFinds => prevFinds.filter(f => f.id !== findId));
+      setError("");
     } catch (err) {
-      console.error('Error details:', err);
+      console.error('Error deleting find:', err);
       setError(`Failed to delete find: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Toggle Form Visibility
-  const handleShowForm: () => void = () => {
-    setShowForm(!showForm);
-    setEditingFind(null);
-    setFormData(initialFind);
-    setImagePreview("");
-    setImageFile(null);
-  };
-
   // Handle Edit Find
-  const handleEdit: (find: Find) => void = (find: Find) => {
+  const handleEdit = (find: Find): void => {
     setEditingFind(find);
     setShowForm(true);
     setFormData({
       name: find.name,
       date: find.date,
       location: find.location,
-      coordinates: find.coordinates,
-      what3words: find.what3words,
-      depth: find.depth,
-      metalType: find.metalType,
-      condition: find.condition,
-      notes: find.notes
+      coordinates: find.coordinates || "",
+      what3words: find.what3words || "",
+      depth: find.depth || "",
+      metalType: find.metalType || "",
+      condition: find.condition || "",
+      notes: find.notes || ""
     });
+    // Reset image preview when editing
+    setImagePreview("");
+    setImageFile(null);
   };
 
   // Handle Copy What3Words
@@ -459,29 +452,26 @@ const FindsCatalog: React.FC = () => {
       ================= */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 transition-all">
         {finds.map((find) => (
-          <div key={find.id} className="relative bg-white rounded-xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 border border-gray-100">
-            {/* Edit/Delete buttons - Make sure these are inside each card */}
-            <div className="absolute top-3 right-3 flex gap-2 z-10 opacity-90 hover:opacity-100">
+          <div key={find.id} className="relative bg-white rounded-xl shadow-xl overflow-hidden">
+            <div className="absolute top-3 right-3 flex gap-2 z-10">
               <button
                 onClick={(e) => {
-                  e.stopPropagation();
+                  e.stopPropagation(); // Prevent event bubbling
                   handleEdit(find);
                 }}
-                className="p-2 bg-white rounded-full shadow-lg hover:bg-blue-50 transform hover:scale-105 transition-all"
+                className="p-2 bg-white rounded-full shadow-lg hover:bg-blue-50 transition-all"
                 title="Edit find"
               >
                 <Edit2 className="text-blue-500" size={20} />
               </button>
               <button
                 onClick={async (e) => {
-                  e.stopPropagation();
-                  try {
-                    await handleDelete(find);
-                  } catch (error) {
-                    console.error('Button click error:', error);
+                  e.stopPropagation(); // Prevent event bubbling
+                  if (find.id) { // Make sure we have an ID
+                    await handleDelete(find.id);
                   }
                 }}
-                className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transform hover:scale-105 transition-all disabled:opacity-50"
+                className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-all"
                 title="Delete find"
                 disabled={isLoading}
               >
